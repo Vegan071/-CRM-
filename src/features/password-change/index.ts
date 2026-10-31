@@ -1,0 +1,1 @@
+export { PasswordChangeForm } from "./ui/password-change-form";

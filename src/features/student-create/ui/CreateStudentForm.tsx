@@ -1,20 +1,86 @@
 "use client";
 
-import React from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import type { ModalFormContext } from "@/shared/ui/entity-modal";
+import {
+    EntityForm,
+    FieldRow,
+    FormCheckbox,
+    FormCombobox,
+    FormInput,
+    FormSelect,
+} from "@/shared/ui/form";
+import { GENDER_OPTIONS, studentSchema, type StudentFormInput, type StudentFormValues } from "../model/schema";
+import { searchCollegeGroups, searchTeachers } from "@/shared/api/options";
+import {createStudent} from "@/features/student-create/api/actions";
+import {toast} from "sonner";
 
-export const CreateGroupForm = ({ formId, close }: ModalFormContext) => (
-    <form
-        id={formId}
-        className="flex flex-col gap-3"
-        onSubmit={(e) => {
-            e.preventDefault();
-            const data = new FormData(e.currentTarget);
-            // TODO: запрос на создание группы, например createGroup(data)
-            console.log(Object.fromEntries(data));
-            close();
-        }}
-    >
-        <input name="name" placeholder="Название группы" required />
-    </form>
-);
+export function CreateStudentForm({ formId, close }: ModalFormContext) {
+    const form = useForm<StudentFormInput, unknown, StudentFormValues>({
+        resolver: zodResolver(studentSchema),
+        defaultValues: {
+            fullName: "",
+            phone: "",
+            birthDate: "",
+            gender: "",
+            snils: "",
+            collegeGroupId: "",
+            curatorId: "",
+            isDpkStudent: false,
+            medCertNumber: "",
+            medInstitution: "",
+        },
+    });
+
+    async function onSubmit() {
+        const res = await createStudent(form.getValues());
+        if (!res.ok) {
+            toast.error(res.error);
+            return;
+        }
+        toast.success(`Студент «${res.data.fullName}» добавлен`);
+        close();
+    }
+
+    return (
+        <EntityForm formId={formId} form={form} onSubmit={onSubmit}>
+            <FormInput name="fullName" label="ФИО"
+                       placeholder="Иванов Иван Иванович"/>
+            <FieldRow>
+                <FormInput name="phone" type="tel" label="Телефон"
+                           placeholder="+7 (999) 000-00-00"/>
+                <FormInput name="birthDate" type="date" label="Дата рождения"/>
+            </FieldRow>
+            <FieldRow>
+                <FormSelect name="gender" label="Пол" placeholder="Выберите пол"
+                            options={GENDER_OPTIONS}/>
+                <FormInput name="snils" label="СНИЛС"
+                           placeholder="000-000-000 00"/>
+            </FieldRow>
+            <FieldRow>
+                <FormCombobox
+                    name="collegeGroupId"
+                    label="Группа"
+                    fetchOptionsAction={searchCollegeGroups}
+                    placeholder="Найти группу"
+                    optional
+                />
+                <FormCombobox
+                    name="curatorId"
+                    label="Куратор"
+                    fetchOptionsAction={searchTeachers}
+                    placeholder="Найти куратора"
+                    optional
+                />
+            </FieldRow>
+            <FormCheckbox name="isDpkStudent" label="Студент ДПК"/>
+            <FieldRow>
+                <FormInput name="medCertNumber" label="Серия и № мед. справки"
+                           placeholder="00 00 № 000000" optional/>
+                <FormInput name="medInstitution" label="Учреждение"
+                           placeholder="Наименование учреждения" optional/>
+            </FieldRow>
+        </EntityForm>
+    );
+}

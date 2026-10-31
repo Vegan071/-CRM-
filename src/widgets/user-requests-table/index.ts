@@ -1,0 +1,1 @@
+export { UserRequestsTable } from "./ui/user-requests-table";

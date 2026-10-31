@@ -3,13 +3,10 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
-  turbopack: {
-    rules: {
-      "*.css": {
-        loaders: ["@tailwindcss/turbopack"],
-        as: "*.css",
-      },
-    },
+
+  experimental: {
+    optimizePackageImports: ["@siberiacancode/reactuse", "lucide-react", "@base-ui/react"],
+    turbopackFileSystemCacheForDev: false,
   },
 };
 

@@ -1,6 +1,24 @@
+generator client {
+  provider = "prisma-client"
+  output   = "./generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
 enum Role {
   ADMIN
   USER
+}
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum GroupStatus {
+  IN_PROGRESS
+  DONE
 }
 
 enum UserStatus {
@@ -29,9 +47,18 @@ enum FieldType {
   CHECKBOX
 }
 
-// ───────── Авторизация (структура Better Auth) ─────────
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  VIEW_SECRET
+  APPROVE
+  REJECT
+}
 
-model User {
+  // ───────── Авторизация (структура Better Auth) ─────────
+
+  model User {
   id            String     @id
   name          String
   email         String     @unique
@@ -99,43 +126,74 @@ model Verification {
 
 // ───────── Предметная область ─────────
 
-// Уникальность имени среди неудалённых групп обеспечивает частичный индекс
-// (Prisma его не умеет описывать, он создаётся SQL-миграцией):
-//   CREATE UNIQUE INDEX "Group_name_active_key" ON "Group" (lower("name")) WHERE "deletedAt" IS NULL;
+model CollegeGroup {
+  id        String    @id @default(uuid())
+  name      String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  students  Student[]
+
+  // уникальность name среди неудалённых — частичный индекс в SQL
+  @@index([deletedAt, createdAt, id])
+}
+// Учебная группа (курс со слушателями из разных групп студентов)
 model Group {
-  id          String         @id @default(uuid())
-  name        String
-  startDate   DateTime?      @db.Date
-  endDate     DateTime?      @db.Date
-  curator     String?
-  price       Int?           // копейки
-  custom      Json           @default("{}")
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  deletedAt   DateTime?
+  id                   String      @id @default(uuid())
+  name                 String
+  startDate            DateTime?   @db.Date
+  endDate              DateTime?   @db.Date
+  status               GroupStatus @default(IN_PROGRESS)
+  teacherId            String?
+  masterId             String?
+  teacher              Teacher?    @relation("GroupMainTeacher", fields: [teacherId], references: [id])
+  master               Teacher?    @relation("GroupMaster", fields: [masterId], references: [id])
+  listenersCount       Int         @default(0)
+  collegeStudentsCount Int         @default(0)
+  discountCount        Int         @default(0)
+  price                Int? // копейки, стоимость за 1 слушателя
+  totalPrice           Int? // копейки, стоимость группы со скидками
+  custom               Json        @default("{}")
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+  deletedAt            DateTime?
 
   enrollments Enrollment[]
   teachers    GroupTeacher[]
 
-  // фильтр по deletedAt + сортировка для курсорной пагинации
+  // уникальность (lower(name), startDate) среди неудалённых — частичный индекс в SQL
+  @@index([teacherId])
+  @@index([masterId])
   @@index([deletedAt, createdAt, id])
 }
 
 model Student {
-  id          String       @id @default(uuid())
-  fullName    String
-  birthDate   DateTime?    @db.Date
-  phone       String?
-  passportEnc String?      // зашифровано (AES-256-GCM)
-  snilsEnc    String?      // зашифровано (AES-256-GCM)
-  custom      Json         @default("{}")
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  deletedAt   DateTime?
+  id             String        @id @default(uuid())
+  fullName       String
+  birthDate      DateTime?     @db.Date
+  gender         Gender?
+  phone          String?
+  passportEnc    String? // зашифровано (AES-256-GCM)
+  snilsEnc       String? // зашифровано (AES-256-GCM)
+  isDpkStudent   Boolean       @default(false)
+  medCertNumber  String?
+  medInstitution String?
+  collegeGroupId String?
+  collegeGroup   CollegeGroup? @relation(fields: [collegeGroupId], references: [id])
+  curatorId      String?
+  curator        Teacher?      @relation("StudentCurator", fields: [curatorId], references: [id])
+  custom         Json          @default("{}")
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  deletedAt      DateTime?
 
   enrollments Enrollment[]
 
+  // уникальность (lower(fullName), birthDate) среди неудалённых — частичный индекс в SQL
   @@index([fullName])
+  @@index([collegeGroupId])
+  @@index([curatorId])
   @@index([deletedAt, createdAt, id])
 }
 
@@ -146,17 +204,18 @@ model Enrollment {
   groupId        String
   student        Student   @relation(fields: [studentId], references: [id])
   group          Group     @relation(fields: [groupId], references: [id])
-  payMethod      PayMethod
+  payMethod      PayMethod?
   contractNumber String?
-  price          Int       // копейки
+  price          Int        @default(0) // копейки
   custom         Json      @default("{}")
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   deletedAt      DateTime?
 
-  payments       Payment[]
+  payments Payment[]
 
-  @@unique([studentId, groupId])
+  // уникальность (studentId, groupId) среди неудалённых — частичный индекс в SQL
+  @@index([studentId])
   @@index([groupId])
 }
 
@@ -165,9 +224,10 @@ model Payment {
   enrollmentId String
   enrollment   Enrollment @relation(fields: [enrollmentId], references: [id])
   paidAt       DateTime   @db.Date
-  amount       Int        // копейки
+  amount       Int // копейки
   note         String?
   createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @default(now()) @updatedAt
   deletedAt    DateTime?
 
   @@index([enrollmentId])
@@ -176,36 +236,44 @@ model Payment {
 // Уникальность ФИО среди неудалённых преподавателей — частичный индекс:
 //   CREATE UNIQUE INDEX "Teacher_fullName_active_key" ON "Teacher" (lower("fullName")) WHERE "deletedAt" IS NULL;
 model Teacher {
-  id        String         @id @default(uuid())
+  id        String    @id @default(uuid())
   fullName  String
   phone     String?
-  custom    Json           @default("{}")
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
+  custom    Json      @default("{}")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  groups    GroupTeacher[]
-
+  groups GroupTeacher[]
+  curatedStudents Student[] @relation("StudentCurator")
+  mainGroups      Group[]   @relation("GroupMainTeacher")
+  masterGroups    Group[]   @relation("GroupMaster")
   @@index([fullName])
   @@index([deletedAt, createdAt, id])
 }
 
 // Преподаватель в группе: контракт и выплаты
 model GroupTeacher {
-  id             String           @id @default(uuid())
-  groupId        String
-  teacherId      String
-  group          Group            @relation(fields: [groupId], references: [id])
-  teacher        Teacher          @relation(fields: [teacherId], references: [id])
-  contractNumber String
-  contractDate   DateTime         @db.Date
-  amount         Int              // копейки, сумма по контракту
-  createdAt      DateTime         @default(now())
-  deletedAt      DateTime?
+  id                String    @id @default(uuid())
+  groupId           String?
+  teacherId         String
+  group             Group?    @relation(fields: [groupId], references: [id])
+  teacher           Teacher   @relation(fields: [teacherId], references: [id])
+  contractNumber    String
+  contractDate      DateTime  @db.Date
+  serviceStartDate  DateTime? @db.Date
+  serviceEndDate    DateTime? @db.Date
+  contractStartDate DateTime? @db.Date
+  contractEndDate   DateTime? @db.Date
+  amount            Int? // копейки, сумма по контракту
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @default(now()) @updatedAt
+  deletedAt         DateTime?
 
-  payments       TeacherPayment[]
+  payments TeacherPayment[]
 
-  @@unique([groupId, teacherId])
+  // уникальность (groupId, teacherId) и (teacherId, lower(contractNumber)) среди неудалённых — частичные индексы в SQL
+  @@index([groupId])
   @@index([teacherId])
 }
 
@@ -215,8 +283,9 @@ model TeacherPayment {
   groupTeacher   GroupTeacher @relation(fields: [groupTeacherId], references: [id])
   paidAt         DateTime     @db.Date
   actNumber      String
-  amount         Int          // копейки
+  amount         Int // копейки
   createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @default(now()) @updatedAt
   deletedAt      DateTime?
 
   @@index([groupTeacherId])
@@ -230,7 +299,7 @@ model FieldDefinition {
   key       String
   label     String
   type      FieldType
-  options   Json?       // варианты для SELECT: ["a","b"]
+  options   Json? // варианты для SELECT: ["a","b"]
   sortOrder Int         @default(0)
   createdAt DateTime    @default(now())
 
@@ -239,14 +308,14 @@ model FieldDefinition {
 }
 
 model AuditLog {
-  id        String   @id @default(uuid())
+  id        String      @id @default(uuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  user      User        @relation(fields: [userId], references: [id])
   entity    String
   entityId  String
-  action    String   // create / update / delete / view_secret / ACTIVE / REJECTED
+  action    AuditAction
   diff      Json?
-  createdAt DateTime @default(now())
+  createdAt DateTime    @default(now())
 
   @@index([entity, entityId])
   @@index([createdAt])

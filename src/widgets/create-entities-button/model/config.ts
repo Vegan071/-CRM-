@@ -1,8 +1,8 @@
 import type React from "react";
 import type { ModalProps } from "@/shared/ui/entity-modal";
-import { CreateGroupModal } from "@/features/create-group";
-import { CreateStudentModal } from "@/features/create-student";
-import { CreateTeacherModal } from "@/features/create-teacher";
+import {CreateTeacherModal} from "@/features/teacher-create";
+import {CreateGroupModal} from "@/features/group-create";
+import {CreateStudentModal} from "@/features/student-create";
 
 export type EntityConfig = {
     id: string;

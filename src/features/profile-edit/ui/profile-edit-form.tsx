@@ -6,9 +6,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { authClient } from "@/shared/api/auth-client";
-import { Button } from "@/shared/ui/button";
-import { Input } from "@/shared/ui/input";
-import { Label } from "@/shared/ui/label";
+import { Button } from "@/shared/ui/button/button";
+import { Input } from "@/shared/ui/input/input";
+import { Label } from "@/shared/ui/label/label";
 
 const schema = z.object({
     name: z.string().trim().min(2, "Минимум 2 символа").max(80, "Слишком длинное имя"),
