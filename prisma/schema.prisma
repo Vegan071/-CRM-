@@ -1,0 +1,254 @@
+enum Role {
+  ADMIN
+  USER
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  REJECTED
+}
+
+enum PayMethod {
+  MATERNITY_CAPITAL
+  INSTALLMENT
+}
+
+enum FieldEntity {
+  GROUP
+  STUDENT
+  TEACHER
+  ENROLLMENT
+}
+
+enum FieldType {
+  TEXT
+  NUMBER
+  DATE
+  SELECT
+  CHECKBOX
+}
+
+// ───────── Авторизация (структура Better Auth) ─────────
+
+model User {
+  id            String     @id
+  name          String
+  email         String     @unique
+  emailVerified Boolean    @default(false)
+  image         String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  role          Role       @default(USER)
+  status        UserStatus @default(PENDING)
+
+  sessions      Session[]
+  accounts      Account[]
+  auditLogs     AuditLog[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+// ───────── Предметная область ─────────
+
+// Уникальность имени среди неудалённых групп обеспечивает частичный индекс
+// (Prisma его не умеет описывать, он создаётся SQL-миграцией):
+//   CREATE UNIQUE INDEX "Group_name_active_key" ON "Group" (lower("name")) WHERE "deletedAt" IS NULL;
+model Group {
+  id          String         @id @default(uuid())
+  name        String
+  startDate   DateTime?      @db.Date
+  endDate     DateTime?      @db.Date
+  curator     String?
+  price       Int?           // копейки
+  custom      Json           @default("{}")
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  deletedAt   DateTime?
+
+  enrollments Enrollment[]
+  teachers    GroupTeacher[]
+
+  // фильтр по deletedAt + сортировка для курсорной пагинации
+  @@index([deletedAt, createdAt, id])
+}
+
+model Student {
+  id          String       @id @default(uuid())
+  fullName    String
+  birthDate   DateTime?    @db.Date
+  phone       String?
+  passportEnc String?      // зашифровано (AES-256-GCM)
+  snilsEnc    String?      // зашифровано (AES-256-GCM)
+  custom      Json         @default("{}")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  deletedAt   DateTime?
+
+  enrollments Enrollment[]
+
+  @@index([fullName])
+  @@index([deletedAt, createdAt, id])
+}
+
+// Зачисление студента в группу: здесь договор, способ оплаты и платежи
+model Enrollment {
+  id             String    @id @default(uuid())
+  studentId      String
+  groupId        String
+  student        Student   @relation(fields: [studentId], references: [id])
+  group          Group     @relation(fields: [groupId], references: [id])
+  payMethod      PayMethod
+  contractNumber String?
+  price          Int       // копейки
+  custom         Json      @default("{}")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  payments       Payment[]
+
+  @@unique([studentId, groupId])
+  @@index([groupId])
+}
+
+model Payment {
+  id           String     @id @default(uuid())
+  enrollmentId String
+  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id])
+  paidAt       DateTime   @db.Date
+  amount       Int        // копейки
+  note         String?
+  createdAt    DateTime   @default(now())
+  deletedAt    DateTime?
+
+  @@index([enrollmentId])
+}
+
+// Уникальность ФИО среди неудалённых преподавателей — частичный индекс:
+//   CREATE UNIQUE INDEX "Teacher_fullName_active_key" ON "Teacher" (lower("fullName")) WHERE "deletedAt" IS NULL;
+model Teacher {
+  id        String         @id @default(uuid())
+  fullName  String
+  phone     String?
+  custom    Json           @default("{}")
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  deletedAt DateTime?
+
+  groups    GroupTeacher[]
+
+  @@index([fullName])
+  @@index([deletedAt, createdAt, id])
+}
+
+// Преподаватель в группе: контракт и выплаты
+model GroupTeacher {
+  id             String           @id @default(uuid())
+  groupId        String
+  teacherId      String
+  group          Group            @relation(fields: [groupId], references: [id])
+  teacher        Teacher          @relation(fields: [teacherId], references: [id])
+  contractNumber String
+  contractDate   DateTime         @db.Date
+  amount         Int              // копейки, сумма по контракту
+  createdAt      DateTime         @default(now())
+  deletedAt      DateTime?
+
+  payments       TeacherPayment[]
+
+  @@unique([groupId, teacherId])
+  @@index([teacherId])
+}
+
+model TeacherPayment {
+  id             String       @id @default(uuid())
+  groupTeacherId String
+  groupTeacher   GroupTeacher @relation(fields: [groupTeacherId], references: [id])
+  paidAt         DateTime     @db.Date
+  actNumber      String
+  amount         Int          // копейки
+  createdAt      DateTime     @default(now())
+  deletedAt      DateTime?
+
+  @@index([groupTeacherId])
+}
+
+// ───────── Конструктор полей и журнал ─────────
+
+model FieldDefinition {
+  id        String      @id @default(uuid())
+  entity    FieldEntity
+  key       String
+  label     String
+  type      FieldType
+  options   Json?       // варианты для SELECT: ["a","b"]
+  sortOrder Int         @default(0)
+  createdAt DateTime    @default(now())
+
+  @@unique([entity, key])
+  @@index([entity, sortOrder])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  entity    String
+  entityId  String
+  action    String   // create / update / delete / view_secret / ACTIVE / REJECTED
+  diff      Json?
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([createdAt])
+  @@index([userId])
+}
