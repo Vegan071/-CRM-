@@ -79,12 +79,3 @@
             listeners,
         };
     }
-
-    export async function listTeacherOptions() {
-        const teachers = await db.teacher.findMany({
-            where: { deletedAt: null },
-            orderBy: { fullName: "asc" },
-            select: { id: true, fullName: true },
-        });
-        return teachers.map((t) => ({ id: t.id, name: t.fullName }));
-    }

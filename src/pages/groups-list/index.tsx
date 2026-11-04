@@ -1,6 +1,6 @@
 import { CreateGroupModal } from "@/features/group-create";
 import { requireUser } from "@/shared/api/session";
-import { listTeacherOptions } from "@/features/group-listners/api/queries";
+import { listTeacherOptions } from "@/shared/api/select-options";
 import { fetchGroups } from "@/features/group-listners/api/actions";
 import { GroupsList } from "@/features/group-listners/ui/groups-list";
 
