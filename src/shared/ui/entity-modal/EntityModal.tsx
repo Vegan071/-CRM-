@@ -88,3 +88,5 @@ export function EntityModal({
         </Dialog>
     );
 }
+/** Пропсы, которые получает модалка создания сущности снаружи (управляемое открытие) */
+export type ModalProps = Pick<EntityModalProps, "open" | "onOpenChange">;

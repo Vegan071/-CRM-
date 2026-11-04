@@ -13,14 +13,14 @@ export default async function AdminPage() {
     ]);
 
     return (
-        <main className="container mx-auto max-w-4xl space-y-8 py-8">
+        <div className="container mx-auto max-w-4xl space-y-8 py-8">
             <h1 className="text-2xl font-bold">Админ-панель</h1>
 
             <div className="grid gap-8 md:grid-cols-2">
                 <GroupsPanel initialPage={groups} />
                 <TeachersPanel initialPage={teachers} />
             </div>
-        </main>
+        </div>
     );
 }
 

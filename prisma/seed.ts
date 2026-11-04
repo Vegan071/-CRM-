@@ -2,14 +2,14 @@ import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { hashPassword } from "better-auth/crypto";
 import { randomUUID } from "node:crypto";
-import { PrismaClient } from "@/shared/api/generated/prisma/client";
+import { PrismaClient } from "./generated/prisma/client";
 
 const db = new PrismaClient({
     adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
 });
 
 async function main() {
-    const email = process.env.ADMIN_EMAIL;
+    const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
     const password = process.env.ADMIN_PASSWORD;
     if (!email || !password) throw new Error("Задай ADMIN_EMAIL и ADMIN_PASSWORD");
 

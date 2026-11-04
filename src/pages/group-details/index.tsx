@@ -17,7 +17,7 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
     const { group, listeners } = data;
 
     return (
-        <main className="container mx-auto max-w-4xl space-y-6 py-8">
+        <div className="container mx-auto max-w-4xl space-y-6 py-8">
             <div>
                 <Link href="/" className="text-sm text-muted-foreground hover:underline">
                     ← Все группы
@@ -38,6 +38,6 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
                     listeners.map((l) => <ListenerCard key={l.enrollmentId} listener={l} />)
                 )}
             </section>
-        </main>
+        </div>
     );
 }

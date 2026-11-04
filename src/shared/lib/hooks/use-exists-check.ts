@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import { useDebounceValue } from "@siberiacancode/reactuse";
 import { normalizeName } from "@/shared/lib/normalize";
 
@@ -8,6 +8,8 @@ interface Options {
     delay?: number;
     minLength?: number;
 }
+
+type Result = { value: string; exists: boolean | null };
 
 export function useExistsCheck(
     value: string,
@@ -17,24 +19,17 @@ export function useExistsCheck(
     const current = normalizeName(value);
     const debounced = useDebounceValue(current, delay);
 
-    const [result, setResult] = useState<{ value: string; exists: boolean } | null>(null);
-    const [pending, setPending] = useState(false);
-    const checkRef = useRef(check);
-    checkRef.current = check;
+    // exists === null — проверка не удалась (сервер всё равно проверит при сохранении)
+    const [result, setResult] = useState<Result | null>(null);
+    const runCheck = useEffectEvent(check);
 
     useEffect(() => {
-        if (debounced.length < minLength) {
-            setResult(null);
-            setPending(false);
-            return;
-        }
+        if (debounced.length < minLength) return;
 
         let cancelled = false;
-        setPending(true);
-        checkRef.current(debounced)
+        runCheck(debounced)
             .then((exists) => !cancelled && setResult({ value: debounced, exists }))
-            .catch(() => !cancelled && setResult(null)) // сервер всё равно проверит при сохранении
-            .finally(() => !cancelled && setPending(false));
+            .catch(() => !cancelled && setResult({ value: debounced, exists: null }));
 
         return () => {
             cancelled = true;
@@ -42,7 +37,8 @@ export function useExistsCheck(
     }, [debounced, minLength]);
 
     return {
-        exists: result?.exists === true && result.value === current,
-        isChecking: current.length >= minLength && (pending || current !== debounced),
+        exists: result?.value === current && result.exists === true,
+        isChecking:
+            current.length >= minLength && (current !== debounced || result?.value !== debounced),
     };
 }

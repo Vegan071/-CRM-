@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -44,14 +44,14 @@ export function CreateNameForm<T>({
         register,
         handleSubmit,
         reset,
-        watch,
+        control,
         formState: { errors, isSubmitting },
     } = useForm<{ value: string }>({
         resolver: zodResolver(formSchema),
         defaultValues: { value: "" },
     });
 
-    const { exists, isChecking } = useExistsCheck(watch("value"), check);
+    const { exists, isChecking } = useExistsCheck(useWatch({ control, name: "value" }), check);
 
     const submit = handleSubmit(async ({ value }) => {
         const res = await onSubmit(value);

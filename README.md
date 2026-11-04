@@ -1,36 +1,37 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# МФЦДО CRM
 
-## Getting Started
+CRM для учёта учебных групп, слушателей, преподавателей, договоров и оплат.
 
-First, run the development server:
+**Стек:** Next.js (App Router) · React 19 · Prisma 7 + PostgreSQL · better-auth · Tailwind 4 · zod · react-hook-form.
+Структура `src/` — по Feature-Sliced Design (`app`, `pages`, `widgets`, `features`, `entities`, `shared`); маршруты Next лежат в `app/`.
+
+## Запуск
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
+cp .env.example .env        # заполните переменные
+pnpm db:migrate             # применить миграции
+pnpm db:seed                # создать первого администратора (ADMIN_EMAIL / ADMIN_PASSWORD)
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Открыть http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Переменные окружения
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+См. `.env.example`: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `DATA_ENCRYPTION_KEY`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`.
+`DATA_ENCRYPTION_KEY` — 32 байта в base64 (`openssl rand -base64 32`); им шифруются СНИЛС и паспорт.
 
-## Learn More
+## Доступ
 
-To learn more about Next.js, take a look at the following resources:
+Регистрация создаёт заявку (`PENDING`). Войти можно только после подтверждения администратором в «Администрирование → Пользователи».
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Скрипты
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Команда | Что делает |
+| --- | --- |
+| `pnpm dev` / `pnpm build` / `pnpm start` | разработка / сборка / запуск |
+| `pnpm lint` | ESLint |
+| `pnpm db:generate` | сгенерировать Prisma Client (в `prisma/generated`, в git не хранится) |
+| `pnpm db:migrate` / `pnpm db:deploy` | миграции (dev / prod) |
+| `pnpm db:seed` / `pnpm db:studio` | сид админа / Prisma Studio |

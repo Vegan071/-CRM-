@@ -32,7 +32,7 @@ export async function changeEmail(input: { email: string; password: string }) {
     if (taken) return { error: "Эта почта уже занята" };
 
     await db.user.update({ where: { id: user.id }, data: { email } });
-    await logAction(user.id, "User", user.id, "change_email");
+    await logAction(user.id, "User", user.id, "UPDATE", { field: "email" });
 
     revalidatePath("/", "layout");
     return { error: null };

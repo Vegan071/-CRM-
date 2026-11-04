@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import { toast } from "sonner";
 import { Button } from "@/shared/ui/button/button";
 import { setUserStatus } from "../api/actions";
 
@@ -10,7 +11,7 @@ export function StatusButtons({ userId, status }: { userId: string; status: stri
     const change = (next: "ACTIVE" | "REJECTED") =>
         start(async () => {
             const res = await setUserStatus({ userId, status: next });
-            if (res.error) alert(res.error);
+            if (res.error) toast.error(res.error);
         });
 
     return (

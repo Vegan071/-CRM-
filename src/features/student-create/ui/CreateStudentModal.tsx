@@ -1,12 +1,12 @@
 "use client";
 
 import React from "react";
-import type { EntityModalProps } from "@/shared/ui/entity-modal";
+import type { ModalProps } from "@/shared/ui/entity-modal";
 import { EntityModal } from "@/shared/ui/entity-modal";
 import {Button} from "@/shared/ui/button";
 import {CreateStudentForm} from "@/features/student-create";
 
-type Props = EntityModalProps & {
+type Props = ModalProps & {
     onSuccess?: () => void;
 };
 

@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {GraduationCap, LayoutGrid, NotebookPen, Users} from "lucide-react";
+import { GraduationCap, LayoutGrid, NotebookPen } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 
-export function MainNav({ isAdmin }: { isAdmin: boolean }) {
+export function MainNav() {
     const pathname = usePathname() ?? "";
 
     const links = [
