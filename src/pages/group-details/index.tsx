@@ -4,6 +4,7 @@ import { requireUser } from "@/shared/api/session";
 import {getGroupWithListeners} from "@/features/group-listners/api/queries";
 import {AddListener} from "@/features/group-listners/ui/AddListener";
 import {ListenerCard} from "@/features/group-listners/ui/ListenerCard";
+import { CreateStudentModal } from "@/features/student-create";
 
 
 const fmt = (iso: string | null) => (iso ? iso.split("-").reverse().join(".") : "…");
@@ -28,7 +29,12 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
                 </p>
             </div>
 
-            <AddListener groupId={group.id} />
+            <div className="flex flex-wrap items-end gap-3">
+                <div className="min-w-60 flex-1">
+                    <AddListener groupId={group.id} />
+                </div>
+                <CreateStudentModal groupId={group.id} />
+            </div>
 
             <section className="space-y-3">
                 <h2 className="font-semibold">Слушатели ({listeners.length})</h2>

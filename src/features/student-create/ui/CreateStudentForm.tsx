@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { ModalFormContext } from "@/shared/ui/entity-modal";
@@ -16,7 +17,13 @@ import { searchCollegeGroups, searchTeachers } from "@/shared/api/options";
 import {createStudent} from "@/features/student-create/api/actions";
 import {toast} from "sonner";
 
-export function CreateStudentForm({ formId, close }: ModalFormContext) {
+type Props = ModalFormContext & {
+    /** Если задан — созданный слушатель сразу зачисляется в эту учебную группу */
+    groupId?: string;
+};
+
+export function CreateStudentForm({ formId, close, groupId }: Props) {
+    const router = useRouter();
     const form = useForm<StudentFormInput, unknown, StudentFormValues>({
         resolver: zodResolver(studentSchema),
         defaultValues: {
@@ -34,13 +41,18 @@ export function CreateStudentForm({ formId, close }: ModalFormContext) {
     });
 
     async function onSubmit() {
-        const res = await createStudent(form.getValues());
+        const res = await createStudent(form.getValues(), groupId);
         if (!res.ok) {
             toast.error(res.error);
             return;
         }
-        toast.success(`Студент «${res.data.fullName}» добавлен`);
+        toast.success(
+            groupId
+                ? `Слушатель «${res.data.fullName}» добавлен в группу`
+                : `Студент «${res.data.fullName}» добавлен`,
+        );
         close();
+        router.refresh();
     }
 
     return (
