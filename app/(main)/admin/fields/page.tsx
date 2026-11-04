@@ -1,3 +1,3 @@
 export default function Page() {
-    return <main className="container mx-auto py-8">Поля — в разработке</main>;
+    return <div className="container mx-auto py-8">Поля — в разработке</div>;
 }

@@ -7,7 +7,13 @@ export const requiredText = (message = "Обязательное поле") =>
 /** Необязательный текст: пустая строка → null */
 export const optionalText = z.string().trim().transform((v) => v || null);
 
-export const requiredDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Укажите дату");
+export const requiredDate = z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Укажите дату")
+    .refine((v) => {
+        const d = new Date(`${v}T00:00:00.000Z`);
+        return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v;
+    }, "Укажите корректную дату");
 
 export const requiredNumber = z
     .string()

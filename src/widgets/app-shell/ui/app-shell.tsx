@@ -24,7 +24,7 @@ export async function AppShell({children}: { children: React.ReactNode }) {
                                 className="hidden sm:inline">МФЦДО CRM система
                             </span>
                         </Link>
-                        <MainNav isAdmin={user.role === "ADMIN"}/>
+                        <MainNav/>
                     </div>
                     <UserMenu user={{
                         name: user.name,

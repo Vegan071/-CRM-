@@ -5,9 +5,9 @@ import {
 
 export function TeachersPage() {
     return (
-        <main className="">
+        <div className="">
             Преподаватели
             <CreateTeacherModal/>
-        </main>
+        </div>
     );
 }

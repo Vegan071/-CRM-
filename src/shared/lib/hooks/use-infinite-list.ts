@@ -54,8 +54,12 @@ export function useInfiniteList<T extends { id: string }>({
     const fetchPageRef = useRef(fetchPage);
     const filtersKey = JSON.stringify(filters ?? {});
     const filtersRef = useRef(filters);
-    filtersRef.current = filters;
     const appliedKeyRef = useRef(filtersKey);
+
+    // обновляем ref в эффекте (не во время рендера); объявлен раньше эффекта загрузки, поэтому тот видит свежие фильтры
+    useEffect(() => {
+        filtersRef.current = filters;
+    });
 
     const load = useCallback(
         async (reset: boolean) => {

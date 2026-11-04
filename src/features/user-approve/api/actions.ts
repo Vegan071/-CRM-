@@ -19,6 +19,10 @@ export async function setUserStatus(input: z.infer<typeof schema>) {
         return { error: "Нельзя менять доступ самому себе" };
     }
 
+    const target = await db.user.findUnique({ where: { id: userId }, select: { role: true } });
+    if (!target) return { error: "Пользователь не найден" };
+    if (target.role === "ADMIN") return { error: "Нельзя менять доступ администратора" };
+
     await db.user.update({ where: { id: userId }, data: { status } });
 
     // отклонённого сразу выкидываем из всех открытых сессий
@@ -26,7 +30,7 @@ export async function setUserStatus(input: z.infer<typeof schema>) {
         await db.session.deleteMany({ where: { userId } });
     }
 
-    await logAction(admin.id, "User", userId, status);
+    await logAction(admin.id, "User", userId, status === "ACTIVE" ? "APPROVE" : "REJECT");
     revalidatePath("/admin/users");
     return { error: null };
 }

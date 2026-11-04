@@ -1,6 +1,6 @@
 "use client";
 
-import {useEffect, useState} from "react";
+import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -16,8 +16,12 @@ export function LoginForm() {
     const router = useRouter();
     const [serverError, setServerError] = useState<string | null>(null);
 
-    const [ready, setReady] = useState(false);
-    useEffect(() => setReady(true), []);
+    // false на сервере и при гидрации, true после — кнопка неактивна, пока форма не «ожила»
+    const ready = useSyncExternalStore(
+        () => () => {},
+        () => true,
+        () => false,
+    );
 
     const {
         register,

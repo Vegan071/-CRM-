@@ -3,9 +3,9 @@ import {CreateStudentModal} from "@/features/student-create";
 
 export function StudentsPage() {
     return (
-        <main className="">
+        <div className="">
             Слушатели
             <CreateStudentModal/>
-        </main>
+        </div>
     );
 }
