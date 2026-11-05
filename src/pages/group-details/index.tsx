@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/shared/api/session";
 import {getGroupWithListeners} from "@/features/group-listners/api/queries";
 import {AddListener} from "@/features/group-listners/ui/AddListener";
-import {ListenerCard} from "@/features/group-listners/ui/ListenerCard";
+import { ListenersPanel } from "@/features/group-listners/ui/ListenersPanel";
 import { CreateStudentModal } from "@/features/student-create";
 
 
@@ -36,14 +36,7 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
                 <CreateStudentModal groupId={group.id} />
             </div>
 
-            <section className="space-y-3">
-                <h2 className="font-semibold">Слушатели ({listeners.length})</h2>
-                {listeners.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">В группе пока никого нет</p>
-                ) : (
-                    listeners.map((l) => <ListenerCard key={l.enrollmentId} listener={l} />)
-                )}
-            </section>
+            <ListenersPanel listeners={listeners} />
         </div>
     );
 }
