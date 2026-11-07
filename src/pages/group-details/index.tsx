@@ -5,6 +5,7 @@ import {getGroupWithListeners} from "@/features/group-listners/api/queries";
 import {AddListener} from "@/features/group-listners/ui/AddListener";
 import { ListenersPanel } from "@/features/group-listners/ui/ListenersPanel";
 import { CreateStudentModal } from "@/features/student-create";
+import { GroupDetails } from "@/features/group-edit";
 
 
 const fmt = (iso: string | null) => (iso ? iso.split("-").reverse().join(".") : "…");
@@ -28,6 +29,8 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
                     {fmt(group.startDate)} — {fmt(group.endDate)}
                 </p>
             </div>
+
+            <GroupDetails group={group} />
 
             <div className="flex flex-wrap items-end gap-3">
                 <div className="min-w-60 flex-1">

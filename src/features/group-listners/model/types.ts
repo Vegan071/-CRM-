@@ -17,7 +17,23 @@ export type ListenerDto = {
     price: number;
     paid: number;
     enrolledAt: string | null;
-    payments: { id: string; amount: number; date: string | null }[];
+};
+
+export type GroupDto = {
+    id: string;
+    name: string;
+    startDate: string | null;
+    endDate: string | null;
+    status: "IN_PROGRESS" | "DONE";
+    teacher: { id: string; fullName: string } | null;
+    master: { id: string; fullName: string } | null;
+    listenersCount: number;
+    collegeStudentsCount: number;
+    discountCount: number;
+    /** копейки, стоимость за 1 слушателя */
+    price: number | null;
+    /** копейки, стоимость группы со скидками */
+    totalPrice: number | null;
 };
 
 export type GroupRow = {

@@ -1,5 +1,5 @@
     import { db } from "@/shared/api/db";
-    import type { ListenerDto } from "../model/types";
+    import type { GroupDto, ListenerDto } from "../model/types";
     import {decrypt} from "@/shared/lib/crypto";
 
     // битая запись или неверный ключ не должны валить всю страницу группы
@@ -16,7 +16,20 @@
     export async function getGroupWithListeners(id: string) {
         const group = await db.group.findFirst({
             where: { id, deletedAt: null },
-            select: { id: true, name: true, startDate: true, endDate: true },
+            select: {
+                id: true,
+                name: true,
+                startDate: true,
+                endDate: true,
+                status: true,
+                listenersCount: true,
+                collegeStudentsCount: true,
+                discountCount: true,
+                price: true,
+                totalPrice: true,
+                teacher: { select: { id: true, fullName: true } },
+                master: { select: { id: true, fullName: true } },
+            },
         });
         if (!group) return null;
 
@@ -32,7 +45,7 @@
                 payments: {
                     where: { deletedAt: null },
                     orderBy: [{ paidAt: "asc" }, { createdAt: "asc" }],
-                    select: { id: true, amount: true, paidAt: true },
+                    select: { amount: true },
                 },
                 student: {
                     select: {
@@ -70,12 +83,23 @@
             contractNumber: r.contractNumber,
             price: r.price,
             enrolledAt: iso(r.createdAt),
-            payments: r.payments.map((p) => ({ id: p.id, amount: p.amount, date: iso(p.paidAt) })),
             paid: r.payments.reduce((sum, p) => sum + p.amount, 0),
         }));
 
-        return {
-            group: { id: group.id, name: group.name, startDate: iso(group.startDate), endDate: iso(group.endDate) },
-            listeners,
+        const groupDto: GroupDto = {
+            id: group.id,
+            name: group.name,
+            startDate: iso(group.startDate),
+            endDate: iso(group.endDate),
+            status: group.status,
+            teacher: group.teacher,
+            master: group.master,
+            listenersCount: group.listenersCount,
+            collegeStudentsCount: group.collegeStudentsCount,
+            discountCount: group.discountCount,
+            price: group.price,
+            totalPrice: group.totalPrice,
         };
+
+        return { group: groupDto, listeners };
     }

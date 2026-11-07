@@ -4,9 +4,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/shared/api/db";
 import { requireUser } from "@/shared/api/session";
-import { fail, INT32_MAX, isUniqueViolation, ok, toDate } from "@/shared/api/action-utils";
+import { fail, isUniqueViolation, ok, toDate } from "@/shared/api/action-utils";
 import { encrypt } from "@/shared/lib/crypto";
-import { toKopecks } from "@/shared/lib/money";
 import { normalizeName } from "@/shared/lib/normalize";
 import type { ActionResult, Page, PageParams } from "@/shared/lib/pagination";
 import { pageParamsSchema } from "@/shared/lib/schemas/admin";
@@ -223,7 +222,7 @@ export async function setListenerPaid(enrollmentId: string, paid: boolean): Prom
     return ok(null);
 }
 
-/** Редактирование данных слушателя (студента) и его зачисления (договор, оплата) */
+/** Редактирование данных слушателя (студента) и его зачисления (договор, способ оплаты) */
 export async function updateListener(enrollmentId: string, input: unknown): Promise<ActionResult<null>> {
     const user = await requireUser();
     if (!idSchema.safeParse(enrollmentId).success) return fail("Некорректные данные");
@@ -231,9 +230,6 @@ export async function updateListener(enrollmentId: string, input: unknown): Prom
     const parsed = listenerEditSchema.safeParse(input);
     if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Некорректные данные");
     const v = parsed.data;
-
-    const price = toKopecks(v.price);
-    if (price > INT32_MAX) return fail("Слишком большая сумма");
 
     const enrollment = await db.enrollment.findFirst({
         where: { id: enrollmentId, deletedAt: null },
@@ -285,7 +281,7 @@ export async function updateListener(enrollmentId: string, input: unknown): Prom
             });
             await tx.enrollment.update({
                 where: { id: enrollment.id },
-                data: { payMethod: v.payMethod, contractNumber: v.contractNumber, price },
+                data: { payMethod: v.payMethod, contractNumber: v.contractNumber },
             });
             await tx.auditLog.create({
                 data: {
@@ -302,7 +298,7 @@ export async function updateListener(enrollmentId: string, input: unknown): Prom
                     entity: "Enrollment",
                     entityId: enrollment.id,
                     action: "UPDATE",
-                    diff: { payMethod: v.payMethod, contractNumber: v.contractNumber, price },
+                    diff: { payMethod: v.payMethod, contractNumber: v.contractNumber },
                 },
             });
         });
