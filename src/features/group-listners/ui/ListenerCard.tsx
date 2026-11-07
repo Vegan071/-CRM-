@@ -7,7 +7,7 @@ import {zodResolver} from "@hookform/resolvers/zod";
 import {ChevronDown} from "lucide-react";
 import {toast} from "sonner";
 import {searchCollegeGroups, searchTeachers} from "@/shared/api/options";
-import {formatRub, paymentStatus, type PaymentStatus} from "@/shared/lib/money";
+import {paymentStatus, type PaymentStatus} from "@/shared/lib/money";
 import {Button} from "@/shared/ui/button";
 import {
     EntityForm,
@@ -85,7 +85,6 @@ export function ListenerCard({listener: l}: { listener: ListenerDto }) {
             medInstitution: l.medInstitution ?? "",
             payMethod: l.payMethod ?? "",
             contractNumber: l.contractNumber ?? "",
-            price: (l.price / 100).toFixed(2),
         },
     });
 
@@ -198,7 +197,6 @@ export function ListenerCard({listener: l}: { listener: ListenerDto }) {
                                     />
                                     <FormInput name="contractNumber" label="№ договора" optional/>
                                 </FieldRow>
-                                <FormInput name="price" type="number" step="0.01" min={0} label="Стоимость (₽)"/>
                             </EntityForm>
                             <div className="flex justify-end gap-2">
                                 <Button
@@ -248,24 +246,7 @@ export function ListenerCard({listener: l}: { listener: ListenerDto }) {
                                 <Detail label="Способ оплаты" value={l.payMethod ? PAY_LABEL[l.payMethod] : ""}/>
                                 <Detail label="№ договора" value={l.contractNumber ?? ""}/>
                                 <Detail label="Зачислен" value={fmtDate(l.enrolledAt)}/>
-                                <Detail label="Стоимость" value={formatRub(l.price)}/>
-                                <Detail label="Оплачено" value={`${formatRub(l.paid)} · ${STATUS_LABEL[status]}`}/>
-                                <Detail label="Остаток" value={formatRub(Math.max(l.price - l.paid, 0))}/>
                             </dl>
-
-                            {l.payments.length > 0 && (
-                                <div>
-                                    <h3 className="mb-1 text-xs text-muted-foreground">История платежей</h3>
-                                    <ul className="space-y-1 text-sm">
-                                        {l.payments.map((p) => (
-                                            <li key={p.id} className="flex justify-between">
-                                                <span>{fmtDate(p.date)}</span>
-                                                <span>{formatRub(p.amount)}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
 
                             <div className="flex justify-end gap-2">
                                 <Button type="button" variant="outline" onClick={() => setEditing(true)}>
