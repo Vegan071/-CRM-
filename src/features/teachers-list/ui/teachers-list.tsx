@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import type { Page } from "@/shared/lib/pagination";
 import { useInfiniteList } from "@/shared/lib/hooks";
 import { InfiniteListBody } from "@/shared/ui/infinite-list";
@@ -52,13 +51,12 @@ export function TeachersList({ initialPage }: { initialPage: Page<TeacherRow> })
 
             <InfiniteListBody
                 list={list}
+                itemHref={(t) => `/teachers/${t.id}`}
                 emptyText="Ничего не найдено"
                 endText="Это все преподаватели"
                 renderItem={(t) => (
                     <>
-                        <Link href={`/teachers/${t.id}`} className="font-semibold hover:underline">
-                            {t.fullName}
-                        </Link>
+                        <p className="font-semibold">{t.fullName}</p>
                         <p className="text-sm text-muted-foreground">
                             {[
                                 t.phone,
