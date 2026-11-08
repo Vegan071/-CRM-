@@ -1,6 +1,7 @@
 import { db } from "@/shared/api/db";
 import { normalizeName } from "@/shared/lib/normalize";
 import { toPage, type Page, type PageParams } from "@/shared/lib/pagination";
+import { cursorArgs } from "@/shared/lib/query";
 
 export type GroupItem = { id: string; name: string };
 export type TeacherItem = { id: string; fullName: string };
@@ -17,8 +18,7 @@ export async function listGroupsPage({ cursor, limit, search }: PageParams): Pro
             where,
             select: { id: true, name: true },
             orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-            take: limit + 1,
-            ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+            ...cursorArgs(cursor, limit),
         }),
         cursor ? undefined : db.collegeGroup.count({ where }),
     ]);
@@ -37,8 +37,7 @@ export async function listTeachersPage({ cursor, limit, search }: PageParams): P
             where,
             select: { id: true, fullName: true },
             orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-            take: limit + 1,
-            ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+            ...cursorArgs(cursor, limit),
         }),
         cursor ? undefined : db.teacher.count({ where }),
     ]);

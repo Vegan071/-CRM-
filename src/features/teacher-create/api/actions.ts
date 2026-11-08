@@ -2,6 +2,7 @@
 
 import { db } from "@/shared/api/db";
 import { requireUser } from "@/shared/api/session";
+import { logAction } from "@/shared/api/audit";
 import { fail, isUniqueViolation, ok, toDate } from "@/shared/api/action-utils";
 import type { ActionResult } from "@/shared/lib/pagination";
 import { teacherSchema } from "../model/schema";
@@ -41,15 +42,14 @@ export async function createTeacherContract(input: unknown): Promise<ActionResul
                 },
                 select: { id: true },
             });
-            await tx.auditLog.create({
-                data: {
-                    userId: user.id,
-                    entity: "GroupTeacher",
-                    entityId: row.id,
-                    action: "CREATE",
-                    diff: { teacherId: v.teacherId, contractNumber: v.contractNumber },
-                },
-            });
+            await logAction(
+                user.id,
+                "GroupTeacher",
+                row.id,
+                "CREATE",
+                { teacherId: v.teacherId, contractNumber: v.contractNumber },
+                tx,
+            );
             return row;
         });
         return ok(created);

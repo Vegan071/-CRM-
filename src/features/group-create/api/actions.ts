@@ -2,6 +2,7 @@
 
 import { db } from "@/shared/api/db";
 import { requireUser } from "@/shared/api/session";
+import { logAction } from "@/shared/api/audit";
 import { fail, INT32_MAX, isUniqueViolation, ok, toDate } from "@/shared/api/action-utils";
 import { toKopecks } from "@/shared/lib/money";
 import { normalizeName } from "@/shared/lib/normalize";
@@ -52,9 +53,7 @@ export async function createTrainingGroup(input: unknown): Promise<ActionResult<
                 },
                 select: { id: true, name: true },
             });
-            await tx.auditLog.create({
-                data: { userId: user.id, entity: "Group", entityId: created.id, action: "CREATE", diff: { name } },
-            });
+            await logAction(user.id, "Group", created.id, "CREATE", { name }, tx);
             return created;
         });
         revalidatePath("/groups");

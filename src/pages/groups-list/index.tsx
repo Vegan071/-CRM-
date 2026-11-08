@@ -1,8 +1,8 @@
 import { CreateGroupModal } from "@/features/group-create";
 import { requireUser } from "@/shared/api/session";
 import { listTeacherOptions } from "@/shared/api/select-options";
-import { fetchGroups } from "@/features/group-listners/api/actions";
-import { GroupsList } from "@/features/group-listners/ui/groups-list";
+import { fetchGroups } from "@/features/groups-list/api/actions";
+import { GroupsList } from "@/features/groups-list";
 
 export default async function GroupsPage() {
     await requireUser();

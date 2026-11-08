@@ -15,7 +15,7 @@ import {
     type GroupFormInput,
     type GroupFormValues,
 } from "@/features/group-create/model/schema";
-import type { GroupDto } from "@/features/group-listners/model/types";
+import type { GroupDto } from "@/entities/group/model/types";
 import { updateGroup } from "../api/actions";
 
 const rub = (kopecks: number | null) => (kopecks === null ? "" : (kopecks / 100).toFixed(2));

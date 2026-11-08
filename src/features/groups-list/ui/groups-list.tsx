@@ -3,17 +3,22 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { Page } from "@/shared/lib/pagination";
-import type { GroupRow } from "../model/types";
+import { formatDate } from "@/shared/lib/date";
+import { useInfiniteList } from "@/shared/lib/hooks";
+import { FilterSelect, SearchInput } from "@/shared/ui/list-toolbar";
+import type { GroupRow } from "@/entities/group/model/types";
 import { fetchGroups } from "../api/actions";
-import {useInfiniteList} from "@/shared/lib/hooks";
 
 type Props = {
     initialPage: Page<GroupRow>;
     teachers: { id: string; name: string }[];
 };
 
-const fmt = (iso: string | null) => (iso ? iso.split("-").reverse().join(".") : "…");
-const inputCls = "h-10 rounded-md border bg-background px-3 text-sm";
+const STATUS_OPTIONS = [
+    { value: "active", label: "Идут сейчас" },
+    { value: "upcoming", label: "Ещё не начались" },
+    { value: "finished", label: "Завершены" },
+];
 
 export function GroupsList({ initialPage, teachers }: Props) {
     const [status, setStatus] = useState("");
@@ -31,24 +36,14 @@ export function GroupsList({ initialPage, teachers }: Props) {
             <h1 className="text-2xl font-bold">Группы{total !== undefined ? ` (${total})` : ""}</h1>
 
             <div className="flex flex-wrap gap-2">
-                <input
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Поиск по названию группы…"
-                    className={`${inputCls} min-w-60 flex-1`}
+                <SearchInput value={search} onChange={setSearch} placeholder="Поиск по названию группы…" />
+                <FilterSelect value={status} onChange={setStatus} allLabel="Все статусы" options={STATUS_OPTIONS} />
+                <FilterSelect
+                    value={teacherId}
+                    onChange={setTeacherId}
+                    allLabel="Все преподаватели"
+                    options={teachers.map((t) => ({ value: t.id, label: t.name }))}
                 />
-                <select className={inputCls} value={status} onChange={(e) => setStatus(e.target.value)}>
-                    <option value="">Все статусы</option>
-                    <option value="active">Идут сейчас</option>
-                    <option value="upcoming">Ещё не начались</option>
-                    <option value="finished">Завершены</option>
-                </select>
-                <select className={inputCls} value={teacherId} onChange={(e) => setTeacherId(e.target.value)}>
-                    <option value="">Все преподаватели</option>
-                    {teachers.map((t) => (
-                        <option key={t.id} value={t.id}>{t.name}</option>
-                    ))}
-                </select>
             </div>
 
             <div ref={scrollRef} className="max-h-[70vh] overflow-y-auto pr-1">
@@ -68,7 +63,7 @@ export function GroupsList({ initialPage, teachers }: Props) {
                                     {g.name}
                                 </Link>
                                 <p className="text-sm text-muted-foreground">
-                                    {fmt(g.startDate)} — {fmt(g.endDate)}
+                                    {formatDate(g.startDate, "…")} — {formatDate(g.endDate, "…")}
                                     {g.teacherName ? ` · ${g.teacherName}` : ""} · слушателей: {g.listeners}
                                 </p>
                             </li>

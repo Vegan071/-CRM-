@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import type { Page } from "@/shared/lib/pagination";
+import { formatDate } from "@/shared/lib/date";
 import { useInfiniteList } from "@/shared/lib/hooks";
 import { InfiniteListBody } from "@/shared/ui/infinite-list";
+import { FilterSelect, SearchInput } from "@/shared/ui/list-toolbar";
 import { CreateStudentModal } from "@/features/student-create";
 import { fetchStudents } from "../api/actions";
 import type { StudentRow } from "../model/types";
@@ -16,8 +18,12 @@ type Props = {
     teachers: Option[];
 };
 
-const fmtDate = (iso: string | null) => (iso ? iso.split("-").reverse().join(".") : null);
-const inputCls = "h-10 rounded-md border bg-background px-3 text-sm";
+const DPK_OPTIONS = [
+    { value: "yes", label: "Только ДПК" },
+    { value: "no", label: "Не ДПК" },
+];
+
+const toOptions = (items: Option[]) => items.map((i) => ({ value: i.id, label: i.name }));
 
 export function StudentsList({ initialPage, collegeGroups, teachers }: Props) {
     const [collegeGroupId, setCollegeGroupId] = useState("");
@@ -39,29 +45,20 @@ export function StudentsList({ initialPage, collegeGroups, teachers }: Props) {
             </div>
 
             <div className="flex flex-wrap gap-2">
-                <input
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Поиск по ФИО или телефону…"
-                    className={`${inputCls} min-w-60 flex-1`}
+                <SearchInput value={search} onChange={setSearch} placeholder="Поиск по ФИО или телефону…" />
+                <FilterSelect
+                    value={collegeGroupId}
+                    onChange={setCollegeGroupId}
+                    allLabel="Все группы студентов"
+                    options={toOptions(collegeGroups)}
                 />
-                <select className={inputCls} value={collegeGroupId} onChange={(e) => setCollegeGroupId(e.target.value)}>
-                    <option value="">Все группы студентов</option>
-                    {collegeGroups.map((g) => (
-                        <option key={g.id} value={g.id}>{g.name}</option>
-                    ))}
-                </select>
-                <select className={inputCls} value={curatorId} onChange={(e) => setCuratorId(e.target.value)}>
-                    <option value="">Все кураторы</option>
-                    {teachers.map((t) => (
-                        <option key={t.id} value={t.id}>{t.name}</option>
-                    ))}
-                </select>
-                <select className={inputCls} value={dpk} onChange={(e) => setDpk(e.target.value)}>
-                    <option value="">Студенты ДПК: все</option>
-                    <option value="yes">Только ДПК</option>
-                    <option value="no">Не ДПК</option>
-                </select>
+                <FilterSelect
+                    value={curatorId}
+                    onChange={setCuratorId}
+                    allLabel="Все кураторы"
+                    options={toOptions(teachers)}
+                />
+                <FilterSelect value={dpk} onChange={setDpk} allLabel="Студенты ДПК: все" options={DPK_OPTIONS} />
             </div>
 
             <InfiniteListBody
@@ -78,7 +75,7 @@ export function StudentsList({ initialPage, collegeGroups, teachers }: Props) {
                         </p>
                         <p className="text-sm text-muted-foreground">
                             {[
-                                fmtDate(s.birthDate),
+                                formatDate(s.birthDate, ""),
                                 s.phone,
                                 s.collegeGroupName,
                                 s.curatorName ? `куратор: ${s.curatorName}` : null,

@@ -4,11 +4,21 @@ import { useState } from "react";
 import type { Page } from "@/shared/lib/pagination";
 import { useInfiniteList } from "@/shared/lib/hooks";
 import { InfiniteListBody } from "@/shared/ui/infinite-list";
+import { FilterSelect, SearchInput } from "@/shared/ui/list-toolbar";
 import { CreateTeacherModal } from "@/features/teacher-create";
 import { fetchTeachers } from "../api/actions";
 import type { TeacherRow } from "../model/types";
 
-const inputCls = "h-10 rounded-md border bg-background px-3 text-sm";
+const ROLE_OPTIONS = [
+    { value: "teacher", label: "Ведут группы" },
+    { value: "master", label: "Мастера п/о" },
+    { value: "curator", label: "Кураторы" },
+];
+
+const CONTRACT_OPTIONS = [
+    { value: "with", label: "Есть контракт" },
+    { value: "without", label: "Без контракта" },
+];
 
 export function TeachersList({ initialPage }: { initialPage: Page<TeacherRow> }) {
     const [role, setRole] = useState("");
@@ -29,23 +39,14 @@ export function TeachersList({ initialPage }: { initialPage: Page<TeacherRow> })
             </div>
 
             <div className="flex flex-wrap gap-2">
-                <input
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Поиск по ФИО или телефону…"
-                    className={`${inputCls} min-w-60 flex-1`}
+                <SearchInput value={search} onChange={setSearch} placeholder="Поиск по ФИО или телефону…" />
+                <FilterSelect value={role} onChange={setRole} allLabel="Все роли" options={ROLE_OPTIONS} />
+                <FilterSelect
+                    value={contract}
+                    onChange={setContract}
+                    allLabel="Контракты: все"
+                    options={CONTRACT_OPTIONS}
                 />
-                <select className={inputCls} value={role} onChange={(e) => setRole(e.target.value)}>
-                    <option value="">Все роли</option>
-                    <option value="teacher">Ведут группы</option>
-                    <option value="master">Мастера п/о</option>
-                    <option value="curator">Кураторы</option>
-                </select>
-                <select className={inputCls} value={contract} onChange={(e) => setContract(e.target.value)}>
-                    <option value="">Контракты: все</option>
-                    <option value="with">Есть контракт</option>
-                    <option value="without">Без контракта</option>
-                </select>
             </div>
 
             <InfiniteListBody
