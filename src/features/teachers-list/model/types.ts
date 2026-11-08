@@ -8,6 +8,6 @@ export type TeacherRow = {
     asMaster: number;
     /** студентов, у которых он куратор */
     curatedStudents: number;
-    /** действующих контрактов */
+    /** действующих контрактов (дата окончания не наступила или не указана) */
     contracts: number;
 };

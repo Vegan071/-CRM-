@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import type { Page } from "@/shared/lib/pagination";
 import { useInfiniteList } from "@/shared/lib/hooks";
 import { InfiniteListBody } from "@/shared/ui/infinite-list";
@@ -16,8 +17,8 @@ const ROLE_OPTIONS = [
 ];
 
 const CONTRACT_OPTIONS = [
-    { value: "with", label: "Есть контракт" },
-    { value: "without", label: "Без контракта" },
+    { value: "with", label: "Есть действующий контракт" },
+    { value: "without", label: "Нет действующих контрактов" },
 ];
 
 export function TeachersList({ initialPage }: { initialPage: Page<TeacherRow> }) {
@@ -55,14 +56,16 @@ export function TeachersList({ initialPage }: { initialPage: Page<TeacherRow> })
                 endText="Это все преподаватели"
                 renderItem={(t) => (
                     <>
-                        <p className="font-semibold">{t.fullName}</p>
+                        <Link href={`/teachers/${t.id}`} className="font-semibold hover:underline">
+                            {t.fullName}
+                        </Link>
                         <p className="text-sm text-muted-foreground">
                             {[
                                 t.phone,
                                 t.asTeacher > 0 ? `ведёт групп: ${t.asTeacher}` : null,
                                 t.asMaster > 0 ? `мастер в группах: ${t.asMaster}` : null,
                                 t.curatedStudents > 0 ? `куратор у ${t.curatedStudents} студ.` : null,
-                                `контрактов: ${t.contracts}`,
+                                `действующих контрактов: ${t.contracts}`,
                             ]
                                 .filter(Boolean)
                                 .join(" · ")}
