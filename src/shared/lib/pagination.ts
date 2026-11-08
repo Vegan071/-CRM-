@@ -14,6 +14,11 @@ export interface PageParams {
 
 export type ActionResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
+/** Преобразует элементы страницы, сохраняя курсор и total */
+export function mapPage<T, U>(page: Page<T>, fn: (item: T) => U): Page<U> {
+    return { ...page, items: page.items.map(fn) };
+}
+
 /** Ожидает `limit + 1` строк: лишняя строка говорит, что страница не последняя */
 export function toPage<T extends { id: string }>(rows: T[], limit: number, total?: number): Page<T> {
     const hasMore = rows.length > limit;

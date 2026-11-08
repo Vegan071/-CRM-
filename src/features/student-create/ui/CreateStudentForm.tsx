@@ -12,7 +12,12 @@ import {
     FormInput,
     FormSelect,
 } from "@/shared/ui/form";
-import { GENDER_OPTIONS, studentSchema, type StudentFormInput, type StudentFormValues } from "../model/schema";
+import {
+    GENDER_OPTIONS,
+    studentSchema,
+    type StudentFormInput,
+    type StudentFormValues,
+} from "@/entities/student/model/schema";
 import { searchCollegeGroups, searchTeachers } from "@/shared/api/options";
 import {createStudent} from "@/features/student-create/api/actions";
 import {toast} from "sonner";

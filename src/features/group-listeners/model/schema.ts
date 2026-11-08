@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { optionalText } from "@/shared/lib/zod";
-import { studentSchema } from "@/features/student-create/model/schema";
+import { studentSchema } from "@/entities/student/model/schema";
 import type { Option } from "@/shared/ui/form";
 
 export const PAY_METHOD_OPTIONS: Option[] = [

@@ -34,15 +34,3 @@ export const requiredInt = z
             .int("Только целое число")
             .min(0, "Не меньше 0"),
     );
-// ───────── Схемы для админ-панели ─────────
-
-export const createGroupSchema = z.object({
-    name: requiredText("Введите номер группы"),
-});
-
-export const createTeacherSchema = z.object({
-    fullName: requiredText("Введите ФИО преподавателя"),
-});
-
-export type CreateGroupInput = z.input<typeof createGroupSchema>;
-export type CreateTeacherInput = z.input<typeof createTeacherSchema>;

@@ -2,64 +2,51 @@
 
 import { db } from "@/shared/api/db";
 import { requireUser } from "@/shared/api/session";
-import type { Page, PageParams } from "@/shared/lib/pagination";
+import { mapPage, toPage, type Page, type PageParams } from "@/shared/lib/pagination";
+import { cursorArgs } from "@/shared/lib/query";
 import { pageParamsSchema } from "@/shared/lib/schemas/admin";
+import type { Prisma } from "~/prisma/generated/prisma/client";
 import type { TeacherRow } from "../model/types";
+import { alive, buildTeacherWhere } from "./where";
 
-type TeacherWhere = NonNullable<Parameters<typeof db.teacher.count>[0]>["where"];
+const teacherRowSelect = {
+    id: true,
+    fullName: true,
+    phone: true,
+    _count: {
+        select: {
+            mainGroups: { where: alive },
+            masterGroups: { where: alive },
+            curatedStudents: { where: alive },
+            groups: { where: alive },
+        },
+    },
+} satisfies Prisma.TeacherSelect;
 
-const alive = { deletedAt: null };
+const toTeacherRow = (t: Prisma.TeacherGetPayload<{ select: typeof teacherRowSelect }>): TeacherRow => ({
+    id: t.id,
+    fullName: t.fullName,
+    phone: t.phone,
+    asTeacher: t._count.mainGroups,
+    asMaster: t._count.masterGroups,
+    curatedStudents: t._count.curatedStudents,
+    contracts: t._count.groups,
+});
 
-/** Фильтры: role ("teacher" | "master" | "curator"), contract ("with" | "without"); поиск — по ФИО и телефону */
 export async function fetchTeachers(params: PageParams): Promise<Page<TeacherRow>> {
     await requireUser();
-    const { cursor, limit, search, filters = {} } = pageParamsSchema.parse(params);
-    const { role, contract } = filters;
-
-    const contains = { contains: search, mode: "insensitive" as const };
-    const where: TeacherWhere = {
-        deletedAt: null,
-        ...(search && { OR: [{ fullName: contains }, { phone: contains }] }),
-        ...(role === "teacher" && { mainGroups: { some: alive } }),
-        ...(role === "master" && { masterGroups: { some: alive } }),
-        ...(role === "curator" && { curatedStudents: { some: alive } }),
-        ...(contract === "with" && { groups: { some: alive } }),
-        ...(contract === "without" && { groups: { none: alive } }),
-    };
+    const { cursor, limit, search, filters } = pageParamsSchema.parse(params);
+    const where = buildTeacherWhere(search, filters);
 
     const [rows, total] = await Promise.all([
         db.teacher.findMany({
             where,
             orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-            take: limit + 1,
-            ...(cursor && { cursor: { id: cursor }, skip: 1 }),
-            select: {
-                id: true,
-                fullName: true,
-                phone: true,
-                _count: {
-                    select: {
-                        mainGroups: { where: alive },
-                        masterGroups: { where: alive },
-                        curatedStudents: { where: alive },
-                        groups: { where: alive },
-                    },
-                },
-            },
+            ...cursorArgs(cursor, limit),
+            select: teacherRowSelect,
         }),
         cursor ? undefined : db.teacher.count({ where }),
     ]);
 
-    const hasMore = rows.length > limit;
-    const items: TeacherRow[] = rows.slice(0, limit).map((t) => ({
-        id: t.id,
-        fullName: t.fullName,
-        phone: t.phone,
-        asTeacher: t._count.mainGroups,
-        asMaster: t._count.masterGroups,
-        curatedStudents: t._count.curatedStudents,
-        contracts: t._count.groups,
-    }));
-
-    return { items, total, nextCursor: hasMore ? items[items.length - 1].id : null };
+    return mapPage(toPage(rows, limit, total), toTeacherRow);
 }

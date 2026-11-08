@@ -2,6 +2,8 @@
 
 import { db } from "@/shared/api/db";
 import { requireAdmin } from "@/shared/api/session";
+import { logAction } from "@/shared/api/audit";
+import { fail, isUniqueViolation, ok } from "@/shared/api/action-utils";
 import { normalizeName } from "@/shared/lib/normalize";
 import type { ActionResult, Page, PageParams } from "@/shared/lib/pagination";
 import {
@@ -18,12 +20,6 @@ import {
     type TeacherItem,
 } from "./queries";
 
-const ok = <T>(data: T): ActionResult<T> => ({ ok: true, data });
-const fail = (error: string): ActionResult<never> => ({ ok: false, error });
-
-const isUniqueViolation = (e: unknown) =>
-    typeof e === "object" && e !== null && "code" in e && (e as { code: unknown }).code === "P2002";
-
 export async function createGroup(input: unknown): Promise<ActionResult<GroupItem>> {
     const user = await requireAdmin();
 
@@ -39,15 +35,7 @@ export async function createGroup(input: unknown): Promise<ActionResult<GroupIte
                 data: { name },
                 select: { id: true, name: true },
             });
-            await tx.auditLog.create({
-                data: {
-                    userId: user.id,
-                    entity: "CollegeGroup",
-                    entityId: created.id,
-                    action: "CREATE",
-                    diff: { name },
-                },
-            });
+            await logAction(user.id, "CollegeGroup", created.id, "CREATE", { name }, tx);
             return created;
         });
         return ok(group);
@@ -73,15 +61,7 @@ export async function createTeacher(input: unknown): Promise<ActionResult<Teache
                 data: { fullName },
                 select: { id: true, fullName: true },
             });
-            await tx.auditLog.create({
-                data: {
-                    userId: user.id,
-                    entity: "Teacher",
-                    entityId: created.id,
-                    action: "CREATE",
-                    diff: { fullName },
-                },
-            });
+            await logAction(user.id, "Teacher", created.id, "CREATE", { fullName }, tx);
             return created;
         });
         return ok(teacher);

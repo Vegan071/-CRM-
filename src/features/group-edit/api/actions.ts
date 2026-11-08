@@ -1,14 +1,15 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/shared/api/db";
 import { requireUser } from "@/shared/api/session";
+import { logAction } from "@/shared/api/audit";
 import { fail, INT32_MAX, isUniqueViolation, ok, toDate } from "@/shared/api/action-utils";
 import { toKopecks } from "@/shared/lib/money";
 import { normalizeName } from "@/shared/lib/normalize";
 import type { ActionResult } from "@/shared/lib/pagination";
 import { groupSchema } from "@/features/group-create/model/schema";
+import { revalidateGroup } from "@/entities/group/api/revalidate";
 
 const idSchema = z.string().min(1).max(64);
 
@@ -64,26 +65,24 @@ export async function updateGroup(groupId: string, input: unknown): Promise<Acti
                     totalPrice,
                 },
             });
-            await tx.auditLog.create({
-                data: {
-                    userId: user.id,
-                    entity: "Group",
-                    entityId: groupId,
-                    action: "UPDATE",
-                    diff: {
-                        name,
-                        status: v.status,
-                        listenersCount: v.listenersCount,
-                        collegeStudentsCount: v.collegeStudentsCount,
-                        discountCount: v.discountCount,
-                        price,
-                        totalPrice,
-                    },
+            await logAction(
+                user.id,
+                "Group",
+                groupId,
+                "UPDATE",
+                {
+                    name,
+                    status: v.status,
+                    listenersCount: v.listenersCount,
+                    collegeStudentsCount: v.collegeStudentsCount,
+                    discountCount: v.discountCount,
+                    price,
+                    totalPrice,
                 },
-            });
+                tx,
+            );
         });
-        revalidatePath(`/groups/${groupId}`);
-        revalidatePath("/");
+        revalidateGroup(groupId);
         return ok({ name });
     } catch (e) {
         if (isUniqueViolation(e)) return fail("Группа с таким названием и датой начала уже существует");

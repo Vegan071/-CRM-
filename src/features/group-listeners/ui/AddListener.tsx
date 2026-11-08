@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { searchStudentsForGroup } from "@/shared/api/options";
 import { Button } from "@/shared/ui/button";
 import { FormCombobox } from "@/shared/ui/form";
-import { addListener } from "../api/actions";
+import { addListener } from "../api/add-listener";
 
 export function AddListener({ groupId }: { groupId: string }) {
     const router = useRouter();
