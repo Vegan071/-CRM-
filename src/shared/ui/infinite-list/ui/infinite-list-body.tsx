@@ -1,17 +1,20 @@
 "use client";
 
 import type { ReactNode } from "react";
+import Link from "next/link";
 import type { UseInfiniteListResult } from "@/shared/lib/hooks";
 
 type Props<T extends { id: string }> = {
     list: Pick<UseInfiniteListResult<T>, "scrollRef" | "items" | "isLoading" | "hasMore" | "error" | "loadMore">;
     renderItem: (item: T) => ReactNode;
+    /** Если задано, вся карточка становится ссылкой */
+    itemHref?: (item: T) => string;
     emptyText: string;
     endText: string;
 };
 
 /** Прокручиваемый контейнер со списком, индикатором загрузки, ошибкой и «Повторить» для useInfiniteList */
-export function InfiniteListBody<T extends { id: string }>({ list, renderItem, emptyText, endText }: Props<T>) {
+export function InfiniteListBody<T extends { id: string }>({ list, renderItem, itemHref, emptyText, endText }: Props<T>) {
     const { scrollRef, items, isLoading, hasMore, error, loadMore } = list;
 
     return (
@@ -21,8 +24,20 @@ export function InfiniteListBody<T extends { id: string }>({ list, renderItem, e
             ) : (
                 <ul className="space-y-2">
                     {items.map((item) => (
-                        <li key={item.id} className="rounded-lg border px-4 py-3">
+                        <li
+                            key={item.id}
+                            className={`rounded-lg border px-4 py-3 ${
+                                itemHref ? "relative transition-colors hover:bg-muted/50" : ""
+                            }`}
+                        >
                             {renderItem(item)}
+                            {itemHref && (
+                                <Link
+                                    href={itemHref(item)}
+                                    aria-label="Открыть"
+                                    className="absolute inset-0 rounded-lg"
+                                />
+                            )}
                         </li>
                     ))}
                 </ul>
