@@ -7,23 +7,25 @@ import { cursorArgs } from "@/shared/lib/query";
 import { pageParamsSchema } from "@/shared/lib/schemas/admin";
 import type { Prisma } from "~/prisma/generated/prisma/client";
 import type { TeacherRow } from "../model/types";
-import { alive, buildTeacherWhere } from "./where";
+import { activeContract, alive, buildTeacherWhere, startOfToday } from "./where";
 
-const teacherRowSelect = {
-    id: true,
-    fullName: true,
-    phone: true,
-    _count: {
-        select: {
-            mainGroups: { where: alive },
-            masterGroups: { where: alive },
-            curatedStudents: { where: alive },
-            groups: { where: alive },
+// функция, а не константа: «сегодня» должно считаться на каждый запрос, а не при старте сервера
+const teacherRowSelect = (today: Date) =>
+    ({
+        id: true,
+        fullName: true,
+        phone: true,
+        _count: {
+            select: {
+                mainGroups: { where: alive },
+                masterGroups: { where: alive },
+                curatedStudents: { where: alive },
+                groups: { where: activeContract(today) },
+            },
         },
-    },
-} satisfies Prisma.TeacherSelect;
+    }) satisfies Prisma.TeacherSelect;
 
-const toTeacherRow = (t: Prisma.TeacherGetPayload<{ select: typeof teacherRowSelect }>): TeacherRow => ({
+const toTeacherRow = (t: Prisma.TeacherGetPayload<{ select: ReturnType<typeof teacherRowSelect> }>): TeacherRow => ({
     id: t.id,
     fullName: t.fullName,
     phone: t.phone,
@@ -43,7 +45,7 @@ export async function fetchTeachers(params: PageParams): Promise<Page<TeacherRow
             where,
             orderBy: [{ createdAt: "desc" }, { id: "desc" }],
             ...cursorArgs(cursor, limit),
-            select: teacherRowSelect,
+            select: teacherRowSelect(startOfToday()),
         }),
         cursor ? undefined : db.teacher.count({ where }),
     ]);

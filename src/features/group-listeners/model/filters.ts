@@ -1,7 +1,6 @@
 import { parseAsArrayOf, parseAsString } from "nuqs";
-import type { PaymentStatus } from "@/shared/lib/money";
 import type { MultiSelectOption } from "@/shared/ui/multi-select";
-import { listenerStatus } from "./payment-status";
+import { listenerStatus, type ListenerPayStatus } from "./payment-status";
 import type { ListenerDto } from "./types";
 
 /** Значение фильтра «без значения» (нет группы, куратора, способа оплаты) */
@@ -53,8 +52,8 @@ export function facet<T>(
     return options;
 }
 
-export function countByStatus(listeners: ListenerDto[]): Record<PaymentStatus, number> {
-    const counts: Record<PaymentStatus, number> = { UNPAID: 0, PARTIAL: 0, PAID: 0 };
+export function countByStatus(listeners: ListenerDto[]): Record<ListenerPayStatus, number> {
+    const counts: Record<ListenerPayStatus, number> = { UNPAID: 0, PAID: 0 };
     for (const l of listeners) counts[listenerStatus(l)]++;
     return counts;
 }
